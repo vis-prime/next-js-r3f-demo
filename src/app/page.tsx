@@ -22,10 +22,6 @@ export default function Home() {
         {/* The scooter model */}
         <Scooter position={[0, 0, 0]}></Scooter>
 
-        <Grid args={[2, 2]} />
-
-        {/* <AnimatedScooter /> */}
-
         {/* Shadow catcher ground  */}
         <mesh
           receiveShadow
