@@ -1,13 +1,21 @@
 "use client"
 import { useGLTF, MotionPathRef, Line, Grid } from "@react-three/drei"
 import * as THREE from "three"
-import { forwardRef, useRef, useEffect, useCallback, useMemo } from "react"
+import {
+  forwardRef,
+  useRef,
+  useEffect,
+  useCallback,
+  useMemo,
+  useState,
+} from "react"
 import { useFrame, useThree } from "@react-three/fiber"
 import gsap from "gsap"
 import { useGSAP } from "@gsap/react"
 import { button, useControls } from "leva"
 import { ScrollTrigger } from "gsap/all"
 import { damp3 } from "maath/easing"
+import { Particles } from "./particles"
 
 gsap.registerPlugin(ScrollTrigger)
 
@@ -32,13 +40,42 @@ const tmp = {
   targetGoal: new THREE.Vector3(),
 }
 
+const PATH_COORDS = {
+  entry: [
+    [5, 0, -6],
+    [-2, 0, -2.08],
+    [-1.03, 0, -1.01],
+    [0.33, 0, -2.11],
+    [1.13, 0, -1.28],
+    [0, 0, 0],
+  ],
+  camera: [
+    [0.0, 0.5, 1.5],
+    [-0.0, 0.94, 0.71],
+    [1.14, 0.62, 0.18],
+    [0.91, 0.08, -0.94],
+    [-0.47, 0.53, -1.05],
+    [-0.94, 0.48, 0.08],
+    [-0.65, 0.27, 0.64],
+  ],
+  target: [
+    [0.0, 0.3, 0.0],
+    [0.01, 0.35, -0.04],
+    [0.14, 0.28, -0.16],
+    [0.14, 0.27, -0.16],
+    [0.13, 0.28, -0.15],
+    [0.13, 0.28, -0.15],
+    [0.12, 0.35, -0.16],
+  ],
+}
+
 export const Scooter = forwardRef<THREE.Group, ScooterProps>((props, ref) => {
   const { setIntroCompleted } = props
   console.log("Scooter render")
   const { scene } = useGLTF("/scooter_comp.glb")
   const scrubProgress = useRef(0)
   const lookBackDistance = useRef(0.03)
-  const scooterRef = useRef<MotionPathRef>(null)
+  const scooterRef = useRef<THREE.Group>(null)
   const lightRef = useRef<THREE.DirectionalLight>(null)
   const orbitControlsRef = props.orbitControlsRef
 
@@ -51,7 +88,7 @@ export const Scooter = forwardRef<THREE.Group, ScooterProps>((props, ref) => {
   } = useControls("Scooter", {
     showHelpers: false,
 
-    // Animation controls
+    // Direct Animation controls
     directProgress: {
       value: 0,
       min: 0,
@@ -62,99 +99,35 @@ export const Scooter = forwardRef<THREE.Group, ScooterProps>((props, ref) => {
         updateScooterPosition(v)
       },
     },
-    lookBehindDistance: {
-      value: 0.03,
-      min: 0,
-      max: 0.1,
-      step: 0.001,
-      onChange: (v) => {
-        lookBackDistance.current = v
-        updateScooterPosition(scrubProgress.current)
-      },
-    },
-
-    printCurvePoints: button(() => {
-      console.log("Curve Points:")
-      let str = ""
-      entryPath.points.forEach(
-        (p) => (str += `  new THREE.Vector3(${p.x}, ${p.y}, ${p.z}),\n`)
-      )
-      console.log(str)
-    }),
-
-    printCameraPos: button(() => {
-      const p = camera.position
-      const orbitControls = orbitControlsRef.current
-      if (orbitControls) {
-        const t = orbitControls.target
-        console.log(
-          `CAM new THREE.Vector3(${p.x.toFixed(2)}, ${p.y.toFixed(
-            2
-          )}, ${p.z.toFixed(2)}), TAR new THREE.Vector3(${t.x.toFixed(
-            2
-          )}, ${t.y.toFixed(2)}, ${t.z.toFixed(2)}) `
-        )
-      }
-    }),
   })
 
+  // Define the curves for scooter entry path
   const entryPath = useMemo(() => {
-    return new THREE.CatmullRomCurve3(
-      [
-        new THREE.Vector3(5, 0, -6),
-        new THREE.Vector3(-2, 0, -2.08),
-        new THREE.Vector3(-1.03, 0, -1.01),
-        new THREE.Vector3(0.33, 0, -2.11),
-        new THREE.Vector3(1.13, 0, -1.28),
-        new THREE.Vector3(0, 0, 0),
-      ],
-      false,
-      "catmullrom",
-      0.5
-    )
+    const vecArray = PATH_COORDS.entry.map((a) => new THREE.Vector3(...a))
+    return new THREE.CatmullRomCurve3(vecArray, false)
   }, [])
 
+  // Define the curves for camera during scroll
   const scrollCameraPath = useMemo(() => {
-    return new THREE.CatmullRomCurve3(
-      [
-        new THREE.Vector3(0.0, 0.5, 1.5),
-        new THREE.Vector3(-0.0, 0.94, 0.71),
-        new THREE.Vector3(1.14, 0.62, 0.18),
-        new THREE.Vector3(0.91, 0.08, -0.94),
-        new THREE.Vector3(-0.47, 0.53, -1.05),
-        new THREE.Vector3(-0.94, 0.48, 0.08),
-        new THREE.Vector3(-0.65, 0.27, 0.64),
-      ],
-      true
-    )
+    const vecArray = PATH_COORDS.camera.map((a) => new THREE.Vector3(...a))
+    return new THREE.CatmullRomCurve3(vecArray, true)
   }, [])
 
+  // Define the curves for target during scroll
   const scrollTargetPath = useMemo(() => {
-    return new THREE.CatmullRomCurve3(
-      [
-        new THREE.Vector3(0.0, 0.3, 0.0),
-        new THREE.Vector3(0.01, 0.35, -0.04),
-        new THREE.Vector3(0.14, 0.28, -0.16),
-        new THREE.Vector3(0.14, 0.27, -0.16),
-        new THREE.Vector3(0.13, 0.28, -0.15),
-        new THREE.Vector3(0.13, 0.28, -0.15),
-        new THREE.Vector3(0.12, 0.35, -0.16),
-      ],
-      true
-    )
+    const vecArray = PATH_COORDS.target.map((a) => new THREE.Vector3(...a))
+    return new THREE.CatmullRomCurve3(vecArray, true)
   }, [])
 
-  type MeshName = (typeof MESH_NAMES)[number]
-
-  type ScooterMeshes = Record<MeshName, THREE.Mesh | null>
-
-  const scooterMeshes = useRef<ScooterMeshes>({
-    steer: null,
-    wheels_front: null,
-    wheels_rear: null,
-    body: null,
+  // Store references to key meshes for animation
+  const scooterMeshes = useRef({
+    steer: null as THREE.Mesh | null,
+    wheels_front: null as THREE.Mesh | null,
+    wheels_rear: null as THREE.Mesh | null,
+    body: null as THREE.Mesh | null,
   })
 
+  // On model load, traverse , find relevant meshes and enable shadows
   useEffect(() => {
     scene.traverse((child) => {
       if ((child as THREE.Mesh).isMesh) {
@@ -162,9 +135,11 @@ export const Scooter = forwardRef<THREE.Group, ScooterProps>((props, ref) => {
         mesh.castShadow = true
         mesh.receiveShadow = true
 
-        if (MESH_NAMES.includes(child.name as MeshName)) {
-          const meshName = child.name as MeshName
-          scooterMeshes.current[meshName] = mesh
+        if (MESH_NAMES.includes(child.name)) {
+          const meshName = child.name
+          scooterMeshes.current[
+            meshName as keyof typeof scooterMeshes.current
+          ] = mesh
         }
       }
     })
@@ -172,7 +147,7 @@ export const Scooter = forwardRef<THREE.Group, ScooterProps>((props, ref) => {
     invalidate() // for lightRef related items to update
   }, [scene, invalidate])
 
-  // Common animation function used by both Leva and GSAP
+  // Function to update scooter position along entry path
   const updateScooterPosition = useCallback(
     (t: number) => {
       if (!scooterRef.current) return
@@ -218,8 +193,9 @@ export const Scooter = forwardRef<THREE.Group, ScooterProps>((props, ref) => {
     [entryPath, invalidate]
   )
 
-  const introCompleted = useRef(false)
+  const introCompleted = useRef(false) // no need to trigger re-renders
 
+  // Function to scrub camera and target along their paths
   const scrubCameraAlongPath = useCallback(
     (t: number) => {
       scrollCameraPath.getPointAt(t, tmp.cameraGoal)
@@ -229,7 +205,7 @@ export const Scooter = forwardRef<THREE.Group, ScooterProps>((props, ref) => {
     [scrollCameraPath, scrollTargetPath, invalidate]
   )
 
-  // in useFrame, smoothly move towards target
+  // in useFrame, smoothly move camera and target to their goal positions
   useFrame((state, delta) => {
     if (!introCompleted.current) return
 
@@ -259,13 +235,15 @@ export const Scooter = forwardRef<THREE.Group, ScooterProps>((props, ref) => {
     }
   })
 
-  // GSAP animation
+  // GSAP intro animation + scrollTrigger setup
+  const [showParticles, setShowParticles] = useState(false)
+
   useGSAP(
     () => {
       const tl = gsap.timeline({
         onComplete: () => {
           console.log("Scooter entry animation complete")
-          if (setIntroCompleted) setIntroCompleted(true)
+          if (setIntroCompleted) setIntroCompleted(true) // reveals the scroll content on main page
           introCompleted.current = true
           tmp.cameraGoal.copy(camera.position)
           tmp.targetGoal.copy(
@@ -279,7 +257,7 @@ export const Scooter = forwardRef<THREE.Group, ScooterProps>((props, ref) => {
                 end: "bottom bottom",
 
                 onUpdate: (self) => {
-                  console.log("Scrub to", self.progress)
+                  console.log("Scrub to", self.progress.toFixed(2))
                   scrubCameraAlongPath(self.progress)
                 },
               },
@@ -293,6 +271,12 @@ export const Scooter = forwardRef<THREE.Group, ScooterProps>((props, ref) => {
 
                 onUpdate: (self) => {
                   console.log("END progress:", self.progress)
+
+                  if (self.progress > 0) {
+                    setShowParticles(true)
+                  } else {
+                    setShowParticles(false)
+                  }
                 },
               },
             })
@@ -317,6 +301,52 @@ export const Scooter = forwardRef<THREE.Group, ScooterProps>((props, ref) => {
     }
   )
 
+  useGSAP(() => {
+    if (!scooterMeshes.current.body) return
+    // hide the model with the same timing as the particles reveal
+
+    // there's just one material in the model, so we can grab it from any mesh
+    const material = scooterMeshes.current.body
+      .material as THREE.MeshStandardMaterial
+
+    // make material transparent and animate opacity to 0
+    const endOpacity = showParticles ? 0 : 1
+    const endEmissiveIntensity = showParticles ? 5 : 0
+    console.log("Starting scooter hide animation")
+
+    //return early if already at target opacity
+    if (material.opacity === endOpacity) return
+
+    gsap.fromTo(
+      material,
+      {
+        opacity: material.opacity,
+        emissiveIntensity: endOpacity === 0 ? 0 : 5,
+      },
+      {
+        opacity: endOpacity,
+        emissiveIntensity: endEmissiveIntensity,
+        duration: 3,
+        ease: "power2.inOut",
+        onUpdate: invalidate,
+        onStart: () => {
+          if (endOpacity === 0) {
+            material.alphaHash = true // improve transparency sorting when fading out
+            material.transparent = true // ensure transparency is on when fading out
+            material.needsUpdate = true // ensure material updates
+            material.emissive.set("#00ff00") // slight emissive when fading out
+          }
+        },
+        onComplete: () => {
+          if (material.opacity === 1) {
+            material.transparent = false // turn off transparency when fully opaque
+            material.needsUpdate = true // ensure material updates
+          }
+        },
+      }
+    )
+  }, [scooterMeshes, showParticles])
+
   return (
     <group {...props} ref={ref}>
       <directionalLight
@@ -325,8 +355,7 @@ export const Scooter = forwardRef<THREE.Group, ScooterProps>((props, ref) => {
         position={[2, 2, 2]}
         intensity={5}
         castShadow
-        shadow-mapSize-width={1024}
-        shadow-mapSize-height={1024}
+        shadow-mapSize={[1024, 1024]}
         shadow-camera-left={-1}
         shadow-camera-right={1}
         shadow-camera-top={1}
@@ -351,6 +380,10 @@ export const Scooter = forwardRef<THREE.Group, ScooterProps>((props, ref) => {
           <Line points={scrollCameraPath.getPoints(50)} color="blue" />
           <Line points={scrollTargetPath.getPoints(50)} color="yellow" />
         </>
+      )}
+
+      {introCompleted.current && (
+        <Particles showParticles={showParticles} scooterRef={scooterRef} />
       )}
     </group>
   )

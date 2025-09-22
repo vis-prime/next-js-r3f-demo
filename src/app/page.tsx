@@ -4,7 +4,8 @@ import { Canvas } from "@react-three/fiber"
 import { Environment, OrbitControls } from "@react-three/drei"
 import { Scooter } from "@/components/scooter"
 import { useRef, useState } from "react"
-import { Perf } from "r3f-perf"
+import { Bloom, EffectComposer } from "@react-three/postprocessing"
+import { Particles } from "@/components/particles"
 
 export default function Home() {
   const [introCompleted, setIntroCompleted] = useState(false)
@@ -13,7 +14,7 @@ export default function Home() {
     <>
       <div
         className={`transition-opacity duration-300 ${
-          introCompleted ? "opacity-100" : "opacity-0 hidden"
+          introCompleted ? "opacity-100" : " opacity-0 hidden"
         }`}
       >
         <div id="scroll-content">
@@ -40,16 +41,22 @@ export default function Home() {
           shadows
           camera={{ position: [0, 0.5, 1.5], fov: 50 }}
         >
+          <EffectComposer>
+            <Bloom
+              luminanceThreshold={1}
+              luminanceSmoothing={0.8}
+              resolutionScale={0.5}
+            />
+          </EffectComposer>
           {/* <color attach="background" args={["#e0e0e0"]} /> */}
-          <Perf position="top-left" />
 
           {/* Use OrbitControls and set a static target (import OrbitControls from "@react-three/drei") */}
           <OrbitControls
             ref={orbitConRef}
             makeDefault
-            enableRotate={false}
-            enablePan={false}
-            enableZoom={false}
+            // enableRotate={false}
+            // enablePan={false}
+            // enableZoom={false}
             target={[0, 0.3, 0]}
           />
 
