@@ -89,24 +89,28 @@ export const Scooter = forwardRef<THREE.Group, ScooterProps>((props, ref) => {
   }, [camera, invalidate])
 
   // Leva controls for curve points
-  const {
-    // Animation controls
-    showHelpers,
-  } = useControls("Scooter", {
-    showHelpers: false,
+  const showHelpers = useRef(false)
 
-    // Direct Animation controls
-    directProgress: {
-      value: 0,
-      min: 0,
-      max: 1,
-      step: 0.001,
-      onChange: (v) => {
-        scrubProgress.current = v
-        updateScooterPosition(v)
-      },
-    },
-  })
+  // useControls("Scooter", {
+  //   showHelpers: {
+  //     value: showHelpers.current,
+  //     onchange: (v: boolean) => {
+  //       showHelpers.current = v
+  //     },
+  //   },
+
+  //   // Direct Animation controls
+  //   directProgress: {
+  //     value: 0,
+  //     min: 0,
+  //     max: 1,
+  //     step: 0.001,
+  //     onChange: (v) => {
+  //       scrubProgress.current = v
+  //       updateScooterPosition(v)
+  //     },
+  //   },
+  // })
 
   // Define the curves for scooter entry path
   const entryPath = useMemo(() => {
@@ -154,7 +158,6 @@ export const Scooter = forwardRef<THREE.Group, ScooterProps>((props, ref) => {
     // add light.target as child of the 'scene
     if (lightRef.current) {
       scene.add(lightRef.current.target)
-      console.log("LIGHT TARGET ADDed")
     }
 
     invalidate() // for lightRef related items to update
@@ -374,7 +377,7 @@ export const Scooter = forwardRef<THREE.Group, ScooterProps>((props, ref) => {
 
       <primitive object={scene} ref={scooterRef} />
 
-      {showHelpers && (
+      {showHelpers.current && (
         <>
           <Grid args={[2, 2]} />
 

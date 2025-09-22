@@ -29,7 +29,6 @@ const MESH_COUNTS = {
 
 export const Particles = (props: ParticlesProps) => {
   const { scooterRef, showParticles } = props
-  console.log("Particles rendered")
 
   // This reference gives us direct access to our points
   const points = useRef<THREE.Points>(null)
@@ -78,23 +77,11 @@ export const Particles = (props: ParticlesProps) => {
         const mesh = obj as THREE.Mesh
         const meshName = mesh.name.toLowerCase()
 
-        // Direct name matching for each category
-        if (meshName.includes("steer")) {
-          meshes.steer = mesh
-        } else if (meshName.includes("wheel") && meshName.includes("front")) {
-          meshes.wheels_front = mesh
-        } else if (meshName.includes("wheel") && meshName.includes("rear")) {
-          meshes.wheels_rear = mesh
-        } else if (meshName.includes("body")) {
-          meshes.body = mesh
+        const exactMatch = MESH_NAMES.find((name) => meshName === name)
+        if (exactMatch) {
+          meshes[exactMatch] = mesh
         }
       }
-    })
-
-    // Log what we found
-    MESH_NAMES.forEach((category) => {
-      const mesh = meshes[category]
-      console.log(`${category}: ${mesh ? `"${mesh.name}"` : "NOT FOUND"}`)
     })
 
     // Collect triangles from each mesh
@@ -150,8 +137,6 @@ export const Particles = (props: ParticlesProps) => {
 
         meshTriangles[meshName].push({ vertices: [a, b, c], area })
       }
-
-      console.log(`${meshName}: ${meshTriangles[meshName].length} triangles`)
     })
 
     // Calculate total particle count
@@ -345,7 +330,13 @@ export const Particles = (props: ParticlesProps) => {
       {/* mouse debug sphere */}
       {/* <mesh ref={mouseDebugRef}>
         <sphereGeometry args={[0.01, 16, 16]} />
-        <meshBasicMaterial color="red" transparent opacity={0.5} />
+        <meshBasicMaterial
+          color="red"
+          transparent
+          depthTest={false}
+          depthWrite={false}
+          opacity={0.5}
+        />
       </mesh> */}
     </>
   )
