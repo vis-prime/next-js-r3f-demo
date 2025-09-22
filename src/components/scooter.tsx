@@ -21,23 +21,25 @@ gsap.registerPlugin(ScrollTrigger)
 
 type ScooterProps = React.ComponentProps<"group"> & {
   setIntroCompleted?: (completed: boolean) => void
-  orbitControlsRef: React.RefObject<
-    import("three/addons/controls/OrbitControls.js").OrbitControls | null
-  >
 }
 
 const MESH_NAMES = ["steer", "wheels_front", "wheels_rear", "body"]
 
+const initialCameraPosition = new THREE.Vector3(0, 0.5, 1.5)
+const initialCameraLookAt = new THREE.Vector3(0, 0.3, 0)
+
 const tmp = {
   tangent: new THREE.Vector3(),
-  lookAtTarget: new THREE.Vector3(),
+  scooterLookAt: new THREE.Vector3(),
   laggedPosition: new THREE.Vector3(),
   bodyWorldPosition: new THREE.Vector3(),
   directionVector: new THREE.Vector3(),
   bodyLookTarget: new THREE.Vector3(),
 
-  cameraGoal: new THREE.Vector3(),
-  targetGoal: new THREE.Vector3(),
+  cameraGoal: new THREE.Vector3().copy(initialCameraPosition),
+
+  rawLookAt: new THREE.Vector3().copy(initialCameraLookAt),
+  smoothLookAt: new THREE.Vector3().copy(initialCameraLookAt),
 }
 
 const PATH_COORDS = {
@@ -76,9 +78,15 @@ export const Scooter = forwardRef<THREE.Group, ScooterProps>((props, ref) => {
   const lookBackDistance = useRef(0.03)
   const scooterRef = useRef<THREE.Group>(null)
   const lightRef = useRef<THREE.DirectionalLight>(null)
-  const orbitControlsRef = props.orbitControlsRef
 
   const { invalidate, camera } = useThree()
+
+  // set default camera position
+  useEffect(() => {
+    camera.position.copy(initialCameraPosition)
+    camera.lookAt(initialCameraLookAt)
+    invalidate()
+  }, [camera, invalidate])
 
   // Leva controls for curve points
   const {
@@ -143,8 +151,14 @@ export const Scooter = forwardRef<THREE.Group, ScooterProps>((props, ref) => {
       }
     })
 
+    // add light.target as child of the 'scene
+    if (lightRef.current) {
+      scene.add(lightRef.current.target)
+      console.log("LIGHT TARGET ADDed")
+    }
+
     invalidate() // for lightRef related items to update
-  }, [scene, invalidate])
+  }, [scene, lightRef, invalidate])
 
   // Function to update scooter position along entry path
   const updateScooterPosition = useCallback(
@@ -154,8 +168,8 @@ export const Scooter = forwardRef<THREE.Group, ScooterProps>((props, ref) => {
       // Update position along curve (handle follows curve exactly)
       entryPath.getPointAt(t, scooterRef.current.position)
       entryPath.getTangentAt(t, tmp.tangent)
-      tmp.lookAtTarget.copy(scooterRef.current.position).add(tmp.tangent)
-      scooterRef.current.lookAt(tmp.lookAtTarget)
+      tmp.scooterLookAt.copy(scooterRef.current.position).add(tmp.tangent)
+      scooterRef.current.lookAt(tmp.scooterLookAt)
 
       const scooterBody = scooterMeshes.current.body
       const wheelsFront = scooterMeshes.current.wheels_front
@@ -198,7 +212,7 @@ export const Scooter = forwardRef<THREE.Group, ScooterProps>((props, ref) => {
   const scrubCameraAlongPath = useCallback(
     (t: number) => {
       scrollCameraPath.getPointAt(t, tmp.cameraGoal)
-      scrollTargetPath.getPointAt(t, tmp.targetGoal)
+      scrollTargetPath.getPointAt(t, tmp.rawLookAt)
       invalidate()
     },
     [scrollCameraPath, scrollTargetPath, invalidate]
@@ -219,8 +233,8 @@ export const Scooter = forwardRef<THREE.Group, ScooterProps>((props, ref) => {
     )
 
     const tarUpdated = damp3(
-      orbitControlsRef.current?.target ?? new THREE.Vector3(),
-      tmp.targetGoal,
+      tmp.rawLookAt,
+      tmp.smoothLookAt,
       0.2,
       delta,
       undefined,
@@ -229,7 +243,7 @@ export const Scooter = forwardRef<THREE.Group, ScooterProps>((props, ref) => {
     )
 
     if (camUpdated || tarUpdated) {
-      orbitControlsRef.current?.update()
+      camera.lookAt(tmp.smoothLookAt)
       invalidate()
     }
   })
@@ -244,10 +258,7 @@ export const Scooter = forwardRef<THREE.Group, ScooterProps>((props, ref) => {
           // console.log("Scooter entry animation complete")
           if (setIntroCompleted) setIntroCompleted(true) // reveals the scroll content on main page
           introCompleted.current = true
-          tmp.cameraGoal.copy(camera.position)
-          tmp.targetGoal.copy(
-            orbitControlsRef.current?.target || new THREE.Vector3()
-          )
+
           setTimeout(() => {
             gsap.timeline({
               scrollTrigger: {
@@ -269,7 +280,7 @@ export const Scooter = forwardRef<THREE.Group, ScooterProps>((props, ref) => {
                 end: "bottom bottom",
 
                 onUpdate: (self) => {
-                  console.log("END progress:", self.progress)
+                  // console.log("END progress:", self.progress)
 
                   if (self.progress > 0) {
                     setShowParticles(true)
@@ -279,7 +290,7 @@ export const Scooter = forwardRef<THREE.Group, ScooterProps>((props, ref) => {
                 },
               },
             })
-            console.log("scroll events added")
+            // console.log("scroll events added")
           }, 500)
         },
       })
@@ -361,10 +372,7 @@ export const Scooter = forwardRef<THREE.Group, ScooterProps>((props, ref) => {
         shadow-camera-far={50}
       />
 
-      <primitive object={scene} ref={scooterRef}>
-        {/* add light target as child of the scooter to follow it */}
-        {lightRef.current && <primitive object={lightRef.current.target} />}
-      </primitive>
+      <primitive object={scene} ref={scooterRef} />
 
       {showHelpers && (
         <>
@@ -379,7 +387,6 @@ export const Scooter = forwardRef<THREE.Group, ScooterProps>((props, ref) => {
           <Line points={scrollTargetPath.getPoints(50)} color="yellow" />
         </>
       )}
-
       {introCompleted.current && (
         <Particles showParticles={showParticles} scooterRef={scooterRef} />
       )}
