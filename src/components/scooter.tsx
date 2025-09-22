@@ -1,5 +1,5 @@
 "use client"
-import { useGLTF, MotionPathRef, Line, Grid } from "@react-three/drei"
+import { useGLTF, Line, Grid } from "@react-three/drei"
 import * as THREE from "three"
 import {
   forwardRef,
@@ -12,7 +12,7 @@ import {
 import { useFrame, useThree } from "@react-three/fiber"
 import gsap from "gsap"
 import { useGSAP } from "@gsap/react"
-import { button, useControls } from "leva"
+import { useControls } from "leva"
 import { ScrollTrigger } from "gsap/all"
 import { damp3 } from "maath/easing"
 import { Particles } from "./particles"
@@ -71,7 +71,6 @@ const PATH_COORDS = {
 
 export const Scooter = forwardRef<THREE.Group, ScooterProps>((props, ref) => {
   const { setIntroCompleted } = props
-  console.log("Scooter render")
   const { scene } = useGLTF("/scooter_comp.glb")
   const scrubProgress = useRef(0)
   const lookBackDistance = useRef(0.03)
@@ -242,7 +241,7 @@ export const Scooter = forwardRef<THREE.Group, ScooterProps>((props, ref) => {
     () => {
       const tl = gsap.timeline({
         onComplete: () => {
-          console.log("Scooter entry animation complete")
+          // console.log("Scooter entry animation complete")
           if (setIntroCompleted) setIntroCompleted(true) // reveals the scroll content on main page
           introCompleted.current = true
           tmp.cameraGoal.copy(camera.position)
@@ -257,7 +256,7 @@ export const Scooter = forwardRef<THREE.Group, ScooterProps>((props, ref) => {
                 end: "bottom bottom",
 
                 onUpdate: (self) => {
-                  console.log("Scrub to", self.progress.toFixed(2))
+                  // console.log("Scrub to", self.progress.toFixed(2))
                   scrubCameraAlongPath(self.progress)
                 },
               },
@@ -312,7 +311,6 @@ export const Scooter = forwardRef<THREE.Group, ScooterProps>((props, ref) => {
     // make material transparent and animate opacity to 0
     const endOpacity = showParticles ? 0 : 1
     const endEmissiveIntensity = showParticles ? 5 : 0
-    console.log("Starting scooter hide animation")
 
     //return early if already at target opacity
     if (material.opacity === endOpacity) return
@@ -331,7 +329,7 @@ export const Scooter = forwardRef<THREE.Group, ScooterProps>((props, ref) => {
         onUpdate: invalidate,
         onStart: () => {
           if (endOpacity === 0) {
-            material.alphaHash = true // improve transparency sorting when fading out
+            material.alphaHash = true // the hashing dots improve the transition look
             material.transparent = true // ensure transparency is on when fading out
             material.needsUpdate = true // ensure material updates
             material.emissive.set("#00ff00") // slight emissive when fading out

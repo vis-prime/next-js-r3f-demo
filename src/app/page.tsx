@@ -1,23 +1,32 @@
 "use client"
 
 import { Canvas } from "@react-three/fiber"
-import { Environment, OrbitControls } from "@react-three/drei"
+import { Environment, Html, OrbitControls } from "@react-three/drei"
 import { Scooter } from "@/components/scooter"
-import { useRef, useState } from "react"
+import { Suspense, useRef, useState, useEffect, RefObject } from "react"
 import { Bloom, EffectComposer } from "@react-three/postprocessing"
-import { Particles } from "@/components/particles"
 
 export default function Home() {
   const [introCompleted, setIntroCompleted] = useState(false)
   const orbitConRef = useRef(null)
+  const scrollDivRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    // Scroll to top when intro completed
+    if (introCompleted) {
+      window.scrollTo(0, 0)
+    }
+  }, [introCompleted])
+
   return (
     <>
       <div
-        className={`transition-opacity duration-300 ${
-          introCompleted ? "opacity-100" : " opacity-0 hidden"
+        ref={scrollDivRef}
+        className={`transition-opacity duration-800 ${
+          introCompleted ? "opacity-100" : "opacity-0"
         }`}
       >
-        <div id="scroll-content">
+        <div id="scroll-content" className="pointer-events-none touch-none">
           <div className="h-screen flex items-center justify-items-start">
             <h1 className="text-8xl text-blue-700 font-bold">Section A</h1>
           </div>
@@ -29,14 +38,16 @@ export default function Home() {
           </div>
         </div>
         <div id="end-content">
-          <div className="h-screen flex items-center justify-center">
-            <h1 className="text-8xl  text-blue-500 font-bold">Section END</h1>
+          <div className="h-screen flex items-end justify-center pointer-events-none touch-none">
+            <h1 className="text-8xl  text-green-500 font-bold">Section END</h1>
           </div>
         </div>
       </div>
 
-      <div className="fixed inset-0 w-full h-screen ">
+      <div className="fixed inset-0 w-full h-screen -z-10">
         <Canvas
+          eventSource={scrollDivRef as RefObject<HTMLElement>}
+          dpr={[1, 1.5]}
           frameloop="demand"
           shadows
           camera={{ position: [0, 0.5, 1.5], fov: 50 }}
@@ -54,18 +65,20 @@ export default function Home() {
           <OrbitControls
             ref={orbitConRef}
             makeDefault
-            // enableRotate={false}
-            // enablePan={false}
-            // enableZoom={false}
+            enableRotate={false}
+            enablePan={false}
+            enableZoom={false}
             target={[0, 0.3, 0]}
           />
 
-          {/* The scooter model */}
-          <Scooter
-            position={[0, 0, 0]}
-            orbitControlsRef={orbitConRef}
-            setIntroCompleted={setIntroCompleted}
-          />
+          <Suspense fallback={<LoadingDisplay />}>
+            <Scooter
+              position={[0, 0, 0]}
+              orbitControlsRef={orbitConRef}
+              setIntroCompleted={setIntroCompleted}
+            />
+            <Environment preset="apartment" />
+          </Suspense>
 
           {/* Shadow catcher ground  */}
           <mesh
@@ -75,13 +88,21 @@ export default function Home() {
           >
             <planeGeometry args={[10, 10]} />
             <shadowMaterial opacity={0.9} />
-            {/* <meshStandardMaterial color="#777777" /> */}
           </mesh>
-
-          {/* Environment lighting */}
-          <Environment preset="apartment" />
         </Canvas>
       </div>
     </>
+  )
+}
+
+const LoadingDisplay = () => {
+  return (
+    <Html position={[0, 0.3, 0]} center>
+      <div className="flex flex-col items-center justify-center space-y-4">
+        <div className="relative">
+          <h1 className="text-6xl font-bold">Loading</h1>
+        </div>
+      </div>
+    </Html>
   )
 }

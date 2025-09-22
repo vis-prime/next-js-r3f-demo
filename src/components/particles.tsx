@@ -59,10 +59,7 @@ export const Particles = (props: ParticlesProps) => {
   const particlesPosition = useMemo(() => {
     const scene = scooterRef?.current
     if (!scene) {
-      console.warn("Scooter scene not found")
       return new Float32Array(3 * 10)
-    } else {
-      console.warn("Scooter scene found", scene)
     }
     // Direct mesh lookup - find each specific mesh by name
     const meshes: { [key: string]: THREE.Mesh | null } = {
@@ -332,6 +329,11 @@ export const Particles = (props: ParticlesProps) => {
         visible={false}
         position={[0, 1, 0]}
         onPointerMove={(e) => {
+          e.stopPropagation()
+          mouseWorldPos.copy(e.point)
+        }}
+        onPointerDown={(e) => {
+          // for mobile - also update on pointer down
           e.stopPropagation()
           mouseWorldPos.copy(e.point)
         }}
