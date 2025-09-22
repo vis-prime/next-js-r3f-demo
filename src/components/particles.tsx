@@ -255,9 +255,16 @@ export const Particles = (props: ParticlesProps) => {
 
   const mouseDebugRef = useRef<THREE.Mesh>(null)
 
-  useFrame((state, delta) => {
-    if (!points.current || uniforms.current.uReveal.value === 0) return
+  const isParticlesVisible = useRef(false)
 
+  useFrame((state, delta) => {
+    if (!points.current) return
+
+    if (!isParticlesVisible.current) {
+      points.current.visible = false
+      return
+    }
+    points.current.visible = true
     damp3(mouseWorldSmooth, mouseWorldPos, 0.1, delta)
 
     const material = points.current.material as THREE.ShaderMaterial
@@ -284,7 +291,10 @@ export const Particles = (props: ParticlesProps) => {
         value: target,
         duration: 4,
         ease: showParticles ? "power2.out" : "power2.inOut",
-        onUpdate: invalidate,
+        onUpdate: () => {
+          isParticlesVisible.current = uniforms.current.uReveal.value > 0
+          invalidate()
+        },
       }
     )
   }, [showParticles])
