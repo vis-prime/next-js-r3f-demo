@@ -322,6 +322,11 @@ export const Particles = (props: ParticlesProps) => {
           e.stopPropagation()
           mouseWorldPos.copy(e.point)
         }}
+        onPointerUp={(e) => {
+          // move offscreen when not touching
+          e.stopPropagation()
+          mouseWorldPos.set(0, -100, 0)
+        }}
       >
         <planeGeometry args={[5, 5]} />
         <meshBasicMaterial color="orange" transparent opacity={0.1} />

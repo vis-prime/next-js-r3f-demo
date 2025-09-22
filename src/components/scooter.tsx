@@ -140,6 +140,7 @@ export const Scooter = forwardRef<THREE.Group, ScooterProps>((props, ref) => {
 
   // On model load, traverse , find relevant meshes and enable shadows
   useEffect(() => {
+    scene.visible = false // hide until intro starts
     scene.traverse((child) => {
       if ((child as THREE.Mesh).isMesh) {
         const mesh = child as THREE.Mesh
@@ -167,7 +168,7 @@ export const Scooter = forwardRef<THREE.Group, ScooterProps>((props, ref) => {
   const updateScooterPosition = useCallback(
     (t: number) => {
       if (!scooterRef.current) return
-
+      scooterRef.current.visible = true // make visible when intro starts
       // Update position along curve (handle follows curve exactly)
       entryPath.getPointAt(t, scooterRef.current.position)
       entryPath.getTangentAt(t, tmp.tangent)

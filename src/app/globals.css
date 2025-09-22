@@ -12,7 +12,12 @@
   --font-mono: var(--font-geist-mono);
 }
 body {
-  background: linear-gradient(135deg, #001100 0%, #002200 70%, #003311 100%);
+  background: radial-gradient(
+    circle at 100% 100%,
+    #003311 0%,
+    #002200 70%,
+    #001100 100%
+  );
 }
 
 body {

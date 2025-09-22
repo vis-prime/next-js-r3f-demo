@@ -28,20 +28,24 @@ export default function Home() {
         style={{ touchAction: "pan-y" }}
       >
         <div id="scroll-content">
-          <div className="h-screen flex items-center justify-items-start">
-            <h1 className="text-8xl text-blue-700 font-bold">Section A</h1>
-          </div>
-          <div className="h-screen flex items-center justify-end">
-            <h1 className="text-8xl text-blue-700 font-bold">Section B</h1>
-          </div>
-          <div className="h-screen flex items-center justify-start">
-            <h1 className="text-8xl  text-blue-500 font-bold">Section C</h1>
-          </div>
+          <FullScreenDiv
+            text="Section A"
+            vertical="center"
+            horizontal="start"
+          />
+          <FullScreenDiv text="Section B" vertical="center" horizontal="end" />
+          <FullScreenDiv
+            text="Section C"
+            vertical="center"
+            horizontal="start"
+          />
         </div>
         <div id="end-content">
-          <div className="h-screen flex items-end justify-center ">
-            <h1 className="text-8xl  text-green-500 font-bold">Section END</h1>
-          </div>
+          <FullScreenDiv
+            text="Section END"
+            vertical="end"
+            horizontal="center"
+          />
         </div>
       </div>
 
@@ -50,6 +54,45 @@ export default function Home() {
   )
 }
 
+// Reusable full-screen wrapper for scrolling sections
+const FullScreenDiv = ({
+  text,
+  vertical = "center",
+  horizontal = "center",
+}: {
+  text: string
+  vertical?: "start" | "center" | "end"
+  horizontal?: "start" | "center" | "end"
+}) => {
+  // base classes for consistent full-screen layout
+  const base = "h-screen flex"
+
+  // Map direction -> tailwind alignment classes
+  const justifyMap: Record<string, string> = {
+    start: "justify-start",
+    center: "justify-center",
+    end: "justify-end",
+  }
+
+  const alignMap: Record<string, string> = {
+    start: "items-start",
+    center: "items-center",
+    end: "items-end",
+  }
+
+  const justifyClass = justifyMap[horizontal] ?? "justify-center"
+  const itemsClass = alignMap[vertical] ?? "items-center"
+
+  return (
+    <div className={`${base} ${itemsClass} ${justifyClass}`}>
+      <h1 className="text-6xl text-green-700 text-shadow-sm font-bold">
+        {text}
+      </h1>
+    </div>
+  )
+}
+
+// Fullscreen R3F Canvas with scooter model
 const R3fCanvas = ({
   setIntroCompleted,
 }: {
@@ -90,12 +133,13 @@ const R3fCanvas = ({
   )
 }
 
+// Simple loading display while the model loads
 const LoadingDisplay = () => {
   return (
-    <Html position={[0, 0.3, 0]} center>
+    <Html position={[0, 0, 0]} center>
       <div className="flex flex-col items-center justify-center space-y-4">
         <div className="relative">
-          <h1 className="text-6xl font-bold">Loading</h1>
+          <h1 className="text-6xl text-green-700 font-bold">Loading</h1>
         </div>
       </div>
     </Html>
