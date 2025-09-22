@@ -1,9 +1,9 @@
 "use client"
 
 import { Canvas } from "@react-three/fiber"
-import { Environment, Html, OrbitControls } from "@react-three/drei"
+import { Environment, Html } from "@react-three/drei"
 import { Scooter } from "@/components/scooter"
-import { Suspense, useRef, useState, useEffect, RefObject } from "react"
+import { Suspense, useRef, useState, useEffect } from "react"
 import { Bloom, EffectComposer } from "@react-three/postprocessing"
 
 export default function Home() {

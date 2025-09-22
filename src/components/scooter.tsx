@@ -12,7 +12,6 @@ import {
 import { useFrame, useThree } from "@react-three/fiber"
 import gsap from "gsap"
 import { useGSAP } from "@gsap/react"
-import { useControls } from "leva"
 import { ScrollTrigger } from "gsap/all"
 import { damp3 } from "maath/easing"
 import { Particles } from "./particles"
